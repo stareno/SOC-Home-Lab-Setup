@@ -114,9 +114,9 @@ Screenshots from the original lab exercise are included below. Lab addresses are
 
 Both adapters use the same internal network name, `SOC-Lab`.
 
-![Kali VirtualBox internal-network settings](images/kali-network.png)
+![Kali VirtualBox internal-network settings](images/kali-network.jpg)
 
-![Windows VirtualBox internal-network settings](images/windows-network.png)
+![Windows VirtualBox internal-network settings](images/windows-network.jpg)
 
 ### Kali IPv4 validation
 
@@ -128,13 +128,13 @@ The final command output shows `eth0` UP with `192.168.50.10/24`.
 
 Windows shows its IPv4 configuration and four successful ping replies.
 
-![Windows IPv4 configuration and ping to Kali](images/windows-ping.png)
+![Windows IPv4 configuration and ping to Kali](images/windows-ping.jpg)
 
 ### Kali-to-Windows connectivity
 
 The initial test shows 100% loss; the final retest shows four replies and 0% loss.
 
-![Kali ping initial failure and successful retest](images/kali-ping.png)
+![Kali ping initial failure and successful retest](images/kali-ping.jpg)
 
 Source: my internship lab report, **Week1_Task3_SOC_Lab_Moataz_Mostafa.pdf**, 20 October 2026.
 
