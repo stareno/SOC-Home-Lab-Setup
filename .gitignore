@@ -1,0 +1,9 @@
+# Virtual machine disks, snapshots and local captures
+*.vdi
+*.vmdk
+*.vhd
+*.vhdx
+*.iso
+*.sav
+*.pcap
+*.pcapng
