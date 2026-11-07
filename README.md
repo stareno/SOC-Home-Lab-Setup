@@ -1,10 +1,10 @@
 # SOC Home Lab: VirtualBox, Kali Linux and Windows
 
-A two-VM lab built on an Ubuntu host to support future endpoint logging and security investigation exercises. This project documents virtual networking, static IPv4 configuration and measured connectivity results.
+A two-VM lab built on an Ubuntu host to support future endpoint logging and security investigation exercises. This project documents virtual networking, connectivity testing and a Splunk Free deployment on the Kali guest.
 
 **Author:** Moataz Mostafa Ali Ibrahim  
-**Lab implementation:** October 2026  
-**Scope:** Lab infrastructure and connectivity validation
+**Lab implementation:** October–November 2026  
+**Scope:** Lab infrastructure, connectivity validation and SIEM setup
 
 ## Verified outcome
 
@@ -12,6 +12,12 @@ A two-VM lab built on an Ubuntu host to support future endpoint logging and secu
 - Both guests used the internal network `SOC-Lab`.
 - Static addresses placed the guests in the same `/24` subnet.
 - Final ICMP tests received four replies from four requests in each direction.
+
+- Splunk Web opened on Kali, and the Free license group was verified.
+
+## SIEM setup
+
+[Task 10: Splunk setup on Kali](docs/splunk-setup.md) documents the installer transfer, first startup, access to Splunk Web and the switch from Trial to Free. It includes screenshots of the working interface and active license.
 
 ## Architecture
 
@@ -93,7 +99,7 @@ The initial one-way failure made testing both directions necessary. The final re
 
 ## What the results establish
 
-The results demonstrate guest operation, an aligned address plan and bidirectional ICMP reachability at test time. They do not establish that DNS, SMB, RDP, log forwarding or a SIEM was deployed or working.
+The results demonstrate guest operation, an aligned address plan and bidirectional ICMP reachability at test time. These network tests validate ICMP only. The separate Splunk exercise verifies local web access and the Free license; Windows log forwarding was not tested.
 
 ## Skills demonstrated
 
@@ -104,6 +110,7 @@ The results demonstrate guest operation, an aligned address plan and bidirection
 | IPv4 addressing | Assigned and checked static addresses in one subnet |
 | Cross-platform administration | Used Linux and Windows networking tools |
 | Troubleshooting | Compared an initial failed test with a successful retest |
+| SIEM setup | Installed Splunk on Kali and verified local web access and the Free license |
 | Technical reporting | Recorded commands, outcomes and limits of the findings |
 
 ## Evidence
@@ -122,7 +129,7 @@ Both adapters use the same internal network name, `SOC-Lab`.
 
 The final command output shows `eth0` UP with `192.168.50.10/24`.
 
-![Kali IPv4 address validation](images/kali-ipv4.png)
+![Kali IPv4 address validation](images/kali-ipv4.jpg)
 
 ### Windows-to-Kali connectivity
 
@@ -156,4 +163,4 @@ Use endpoint authentication records to investigate failed logons. Log analysis i
 
 ## Attribution
 
-Prepared from my SOC internship lab work. Documentation was organized with AI assistance; the implementation claims are limited to the results recorded in the source report.
+Prepared from my SOC internship lab work. Documentation was organized with AI assistance; the implementation claims are limited to the results recorded in the source lab reports.
