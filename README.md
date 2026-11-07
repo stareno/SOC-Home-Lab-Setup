@@ -1,6 +1,6 @@
-# SOC Home Lab: VirtualBox, Kali Linux and Windows
+# SOC Home Lab: VirtualBox, Kali, Windows and Splunk
 
-A two-VM lab built on an Ubuntu host to support future endpoint logging and security investigation exercises. This project documents virtual networking, connectivity testing and a Splunk Free deployment on the Kali guest.
+A VirtualBox lab on Ubuntu for practicing SOC monitoring and investigations. Kali hosts Splunk, and the Windows guest is the planned source of endpoint events. Both guests share the `SOC-Lab` internal network.
 
 **Author:** Moataz Mostafa Ali Ibrahim  
 **Lab implementation:** October–November 2026  
@@ -12,19 +12,14 @@ A two-VM lab built on an Ubuntu host to support future endpoint logging and secu
 - Both guests used the internal network `SOC-Lab`.
 - Static addresses placed the guests in the same `/24` subnet.
 - Final ICMP tests received four replies from four requests in each direction.
-
 - Splunk Web opened on Kali, and the Free license group was verified.
-
-## SIEM setup
-
-[Task 10: Splunk setup on Kali](docs/splunk-setup.md) documents the installer transfer, first startup, access to Splunk Web and the switch from Trial to Free. It includes screenshots of the working interface and active license.
 
 ## Architecture
 
 ```mermaid
 flowchart TD
     H[Ubuntu host] --> V[VirtualBox]
-    V --> K["Kali Linux: 192.168.50.10/24"]
+    V --> K["Kali Linux + Splunk: 192.168.50.10/24"]
     V --> W["Windows 10: 192.168.50.20/24"]
     K <-->|SOC-Lab internal network| W
 ```
@@ -44,18 +39,19 @@ The host runs the hypervisor. The guest segment uses VirtualBox Internal Network
 | Subnet | `192.168.50.0/24` |
 | Kali | `192.168.50.10/24` on `eth0` |
 | Windows | `192.168.50.20`, mask `255.255.255.0` |
+| SIEM | Splunk Enterprise 10.6.1.1 on Kali, using the Free license group |
 | Gateway | Not required for direct communication within this subnet |
 
 These are implementation details from the exercise, not recommendations to use these exact software versions today.
 
-## Implementation
+## Virtual machine and network setup
 
 1. Used the existing Windows VM and created a Kali VM using the main VMDK descriptor, keeping its split disk parts together. Kali was not installed from an ISO in this exercise.
 2. Powered off the guests and configured Adapter 1 on each as Internal Network with the identical name `SOC-Lab`.
 3. Assigned manual IPv4 settings through NetworkManager on Kali and Ethernet TCP/IPv4 properties on Windows.
 4. Checked addresses and tested communication in both directions.
 
-## Validation
+## Network validation
 
 ### Address checks
 
@@ -97,9 +93,34 @@ ping -c 4 192.168.50.20
 
 The initial one-way failure made testing both directions necessary. The final retest demonstrates restored ICMP reachability. The available evidence does not establish the exact corrective change, so no firewall modification is claimed here.
 
-## What the results establish
+## Splunk SIEM setup
 
-The results demonstrate guest operation, an aligned address plan and bidirectional ICMP reachability at test time. These network tests validate ICMP only. The separate Splunk exercise verifies local web access and the Free license; Windows log forwarding was not tested.
+I installed Splunk on the Kali guest and verified that Splunk Web opened locally and that the standalone instance was using the Free license group.
+
+1. I downloaded the Splunk Linux `.deb` package and placed it in a read-only VirtualBox shared folder named `splunk-transfer`. The folder did not appear under `/media`, so I mounted it manually inside Kali and copied the installer to my home directory:
+
+   ```bash
+   sudo mkdir -p /mnt/splunk-transfer
+   sudo mount -t vboxsf -o ro splunk-transfer /mnt/splunk-transfer
+   sudo cp /mnt/splunk-transfer/splunk-10.6.1.1-b2ae2962645c-linux-amd64.deb "$HOME/"
+   ```
+
+2. I installed the package. Splunk refused the initial root startup without an explicit option, so I used the following commands for this lab run:
+
+   ```bash
+   sudo dpkg -i "$HOME/splunk-10.6.1.1-b2ae2962645c-linux-amd64.deb"
+   sudo /opt/splunk/bin/splunk start --run-as-root
+   ```
+
+3. I opened `http://localhost:8000` in the Kali guest and signed in to verify the Splunk Web home page.
+
+   ![Splunk Web home page after the initial administrator sign-in](images/splunk-web-home.png)
+
+4. Under **Settings → Licensing → Change license group**, I switched from **Trial** to **Free**. I reopened Licensing and verified **Free license group**, with no licensing alerts or violations.
+
+   ![Splunk Licensing page showing the active Free license group](images/splunk-free-license.png)
+
+The screenshots show the initial sign-in and the license verification after switching to Free. The network tests verify ICMP reachability. Windows log forwarding, event ingestion, correlation and alerting have yet to be tested.
 
 ## Skills demonstrated
 
@@ -113,7 +134,7 @@ The results demonstrate guest operation, an aligned address plan and bidirection
 | SIEM setup | Installed Splunk on Kali and verified local web access and the Free license |
 | Technical reporting | Recorded commands, outcomes and limits of the findings |
 
-## Evidence
+## Network evidence
 
 Screenshots from the original lab exercise are included below. Lab addresses are private IPv4 addresses.
 
@@ -143,8 +164,6 @@ The initial test shows 100% loss; the final retest shows four replies and 0% los
 
 ![Kali ping initial failure and successful retest](images/kali-ping.jpg)
 
-Source: my internship lab report, **Week1_Task3_SOC_Lab_Moataz_Mostafa.pdf**, 20 October 2026.
-
 ## Lessons learned
 
 - Identical internal-network names matter: guest adapters must share the intended virtual segment.
@@ -152,9 +171,10 @@ Source: my internship lab report, **Week1_Task3_SOC_Lab_Moataz_Mostafa.pdf**, 20
 - Testing one direction alone can hide an asymmetric reachability problem.
 - A successful ping is a specific observation, not proof that all services work.
 
-## Next project
+## Next steps for the lab
 
-Use endpoint authentication records to investigate failed logons. Log analysis is documented as a separate lab so that infrastructure setup and investigation results remain easy to review.
+- Configure Windows event collection into Splunk and verify that test events are searchable.
+- Use the collected authentication events to investigate failed logons.
 
 ## References
 
@@ -163,4 +183,4 @@ Use endpoint authentication records to investigate failed logons. Log analysis i
 
 ## Attribution
 
-Prepared from my SOC internship lab work. Documentation was organized with AI assistance; the implementation claims are limited to the results recorded in the source lab reports.
+Prepared from my SOC internship lab work, with AI assistance organizing the documentation.
