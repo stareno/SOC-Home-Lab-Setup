@@ -4,7 +4,7 @@ A VirtualBox lab on Ubuntu for practicing SOC monitoring and investigations. Kal
 
 **Author:** Moataz Mostafa Ali Ibrahim  
 **Lab implementation:** October–November 2026  
-**Scope:** Lab infrastructure, connectivity validation and SIEM setup
+**Scope:** Lab infrastructure, endpoint log analysis and SIEM setup
 
 ## Verified outcome
 
@@ -12,6 +12,7 @@ A VirtualBox lab on Ubuntu for practicing SOC monitoring and investigations. Kal
 - Both guests used the internal network `SOC-Lab`.
 - Static addresses placed the guests in the same `/24` subnet.
 - Final ICMP tests received four replies from four requests in each direction.
+- Reviewed Linux journal and Windows Security events locally.
 - Splunk Web opened on Kali, and the Free license group was verified.
 
 ## Architecture
@@ -93,6 +94,65 @@ ping -c 4 192.168.50.20
 
 The initial one-way failure made testing both directions necessary. The final retest demonstrates restored ICMP reachability. The available evidence does not establish the exact corrective change, so no firewall modification is claimed here.
 
+## Network evidence
+
+Screenshots from the original lab exercise are included below. Lab addresses are private IPv4 addresses.
+
+### Internal network configuration
+
+Both adapters use the same internal network name, `SOC-Lab`.
+
+![Kali VirtualBox internal-network settings](images/kali-network.jpg)
+
+![Windows VirtualBox internal-network settings](images/windows-network.jpg)
+
+### Kali IPv4 validation
+
+The final command output shows `eth0` UP with `192.168.50.10/24`.
+
+![Kali IPv4 address validation](images/kali-ipv4.jpg)
+
+### Windows-to-Kali connectivity
+
+Windows shows its IPv4 configuration and four successful ping replies.
+
+![Windows IPv4 configuration and ping to Kali](images/windows-ping.jpg)
+
+### Kali-to-Windows connectivity
+
+The initial test shows 100% loss; the final retest shows four replies and 0% loss.
+
+![Kali ping initial failure and successful retest](images/kali-ping.jpg)
+
+## Endpoint authentication log analysis
+
+I reviewed native logs on both lab guests before adding Splunk. This established what each endpoint records and what a failed authentication event can tell an analyst.
+
+### Linux authentication logs
+
+On Kali, `/var/log/auth.log` was absent, so I searched the systemd journal. I also used `sudo tail -f /var/log/dpkg.log` to practice following a text log; the visible entries were existing package history.
+
+```bash
+sudo journalctl --no-pager |
+  grep -Ei 'failed password|authentication failure|failed login' |
+  tail -n 20
+```
+
+The search returned three historical `pam_unix(lightdm:auth)` failures on October 20, at 08:08:18, 08:08:29 and 08:08:38 as displayed. The events span 20 seconds. The `tty=:0` field is consistent with a graphical login; the remote host and remote user fields were blank. These records establish repeated authentication failures but do not identify an account, a remote source or an attack.
+
+### Windows authentication logs
+
+On Windows 10, I opened **Event Viewer → Windows Logs → Security**, entered `4624` and `4625` in the **Event IDs** field, and reviewed event details. I used the General view and XML to distinguish the requesting account from the account targeted by the failed logon.
+
+| Evidence | What I observed |
+|---|---|
+| Event ID `4624` | A successful logon was present. The visible SYSTEM subject was the requester context; the target account was not visible in the captured view. |
+| Event ID `4625`, record `703` | A failed interactive logon (type `2`) was recorded on 20 October 2026 at `09:40:30Z` in the event XML. |
+| Failure fields | Both Status and SubStatus were `0xC000006E`. The displayed reason was generic; it did not establish that a password was mistyped. |
+| Caller and source | The caller was `msedge.exe`; the source IP and port were not populated. The caller field alone does not establish malicious behavior. |
+
+A single failed interactive logon is insufficient to classify brute force or remote access. The next analytical check would be to compare nearby failures and successes for the same account and examine process-creation evidence if available. The Linux and Windows findings are separate local observations; I did not correlate them as one incident.
+
 ## Splunk SIEM setup
 
 I installed Splunk on the Kali guest and verified that Splunk Web opened locally and that the standalone instance was using the Free license group.
@@ -131,38 +191,9 @@ The screenshots show the initial sign-in and the license verification after swit
 | IPv4 addressing | Assigned and checked static addresses in one subnet |
 | Cross-platform administration | Used Linux and Windows networking tools |
 | Troubleshooting | Compared an initial failed test with a successful retest |
+| Authentication analysis | Filtered native Linux and Windows logs and assessed the limits of failed-logon evidence |
 | SIEM setup | Installed Splunk on Kali and verified local web access and the Free license |
 | Technical reporting | Recorded commands, outcomes and limits of the findings |
-
-## Network evidence
-
-Screenshots from the original lab exercise are included below. Lab addresses are private IPv4 addresses.
-
-### Internal network configuration
-
-Both adapters use the same internal network name, `SOC-Lab`.
-
-![Kali VirtualBox internal-network settings](images/kali-network.jpg)
-
-![Windows VirtualBox internal-network settings](images/windows-network.jpg)
-
-### Kali IPv4 validation
-
-The final command output shows `eth0` UP with `192.168.50.10/24`.
-
-![Kali IPv4 address validation](images/kali-ipv4.jpg)
-
-### Windows-to-Kali connectivity
-
-Windows shows its IPv4 configuration and four successful ping replies.
-
-![Windows IPv4 configuration and ping to Kali](images/windows-ping.jpg)
-
-### Kali-to-Windows connectivity
-
-The initial test shows 100% loss; the final retest shows four replies and 0% loss.
-
-![Kali ping initial failure and successful retest](images/kali-ping.jpg)
 
 ## Lessons learned
 
