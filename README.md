@@ -223,7 +223,20 @@ The time picker is part of the search context. The same event filter returned di
 | Confirm Security events are arriving | `index="main" sourcetype="WinEventLog:Security"` | 954 events in the selected Last 24 hours range |
 | Find failed logons in the recent range | `index="main" sourcetype="WinEventLog:Security" EventCode=4625` | 0 events in Last 24 hours |
 | Find failed logons across indexed history | Same filter, with **All time** selected | 2 events dated October 20, 2026 |
-| Count the matching failed-logon events | `index="main" sourcetype="WinEventLog:Security" EventCode=4625 | stats count AS failed_login_count` | `failed_login_count = 2` |
+| Purpose | SPL | Observed result |
+|---|---|---|
+| Confirm Security events are arriving | `index="main" sourcetype="WinEventLog:Security"` | 954 events in the selected Last 24 hours range |
+| Find failed logons in the recent range | `index="main" sourcetype="WinEventLog:Security" EventCode=4625` | 0 events in Last 24 hours |
+| Find failed logons across indexed history | Same filter, with **All time** selected | 2 events dated October 20, 2026 |
+
+To count the matching events, I added an aggregation command after the pipe:
+
+```spl
+index="main" sourcetype="WinEventLog:Security" EventCode=4625
+| stats count AS failed_login_count
+```
+
+Observed: `failed_login_count = 2`.
 
 These counts describe the indexed events only. The two historical EventCode 4625 records do not by themselves establish brute force or malicious activity. The TryHackMe **Introduction to SIEM** room was completed at 100%.
 
