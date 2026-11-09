@@ -236,7 +236,7 @@ index="main" sourcetype="WinEventLog:Security" EventCode=4625
 | stats count AS failed_login_count
 ```
 
-Observed: `failed_login_count = 2`.
+Observed: `failed_login_count = 2`. The base search selects the matching events; `|` passes them to `stats`; `count` aggregates them; and `AS` names the result column.
 
 These counts describe the indexed events only. The two historical EventCode 4625 records do not by themselves establish brute force or malicious activity. The TryHackMe **Introduction to SIEM** room was completed at 100%.
 
