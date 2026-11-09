@@ -180,7 +180,52 @@ I installed Splunk on the Kali guest and verified that Splunk Web opened locally
 
    ![Splunk Licensing page showing the active Free license group](images/splunk-free-license.png)
 
-The screenshots show the initial sign-in and the license verification after switching to Free. The network tests verify ICMP reachability. Windows log forwarding, event ingestion, correlation and alerting have yet to be tested.
+The screenshots show the initial sign-in and the license verification after switching to Free. The network tests verify ICMP reachability. Windows Security event forwarding and search were verified in the next lab stage; correlation and alerting have not yet been tested.
+
+## Windows event ingestion and basic SPL searches
+
+This stage extends the lab by forwarding real Windows Security events from the Windows 10 guest to Splunk Enterprise on Kali.
+
+### Configure the receiver and verify reachability
+
+In Splunk Web on Kali, I enabled **Settings → Forwarding and receiving → Configure receiving** on TCP port `9997`. From the Windows guest, I verified that the receiver was reachable:
+
+```powershell
+Test-NetConnection 192.168.50.10 -Port 9997
+```
+
+Observed: `TcpTestSucceeded: True` from Windows `192.168.50.20` to Kali `192.168.50.10`.
+
+### Install and configure Universal Forwarder
+
+I installed Splunk Universal Forwarder **10.6.1.1 (Windows x64)** on Windows 10 and set the receiving indexer to `192.168.50.10:9997`. The Security event log input was enabled in:
+
+```text
+C:\Program Files\SplunkUniversalForwarder\etc\system\local\inputs.conf
+```
+
+Configuration:
+
+```ini
+[WinEventLog://Security]
+disabled = 0
+index = main
+```
+
+After saving the input, I restarted the **SplunkForwarder** Windows service so it would load the new configuration. Splunk received events with host `DESKTOP-OAE6UKR`, source/sourcetype `WinEventLog:Security`, and index `main`.
+
+### Basic SPL searches
+
+The time picker is part of the search context. The same event filter returned different results for **Last 24 hours** and **All time** because the two failed-logon events were historical.
+
+| Purpose | SPL | Observed result |
+|---|---|---|
+| Confirm Security events are arriving | `index="main" sourcetype="WinEventLog:Security"` | 954 events in the selected Last 24 hours range |
+| Find failed logons in the recent range | `index="main" sourcetype="WinEventLog:Security" EventCode=4625` | 0 events in Last 24 hours |
+| Find failed logons across indexed history | Same filter, with **All time** selected | 2 events dated October 20, 2026 |
+| Count the matching failed-logon events | `index="main" sourcetype="WinEventLog:Security" EventCode=4625 | stats count AS failed_login_count` | `failed_login_count = 2` |
+
+These counts describe the indexed events only. The two historical EventCode 4625 records do not by themselves establish brute force or malicious activity. The TryHackMe **Introduction to SIEM** room was completed at 100%.
 
 ## Skills demonstrated
 
@@ -192,7 +237,7 @@ The screenshots show the initial sign-in and the license verification after swit
 | Cross-platform administration | Used Linux and Windows networking tools |
 | Troubleshooting | Compared an initial failed test with a successful retest |
 | Authentication analysis | Filtered native Linux and Windows logs and assessed the limits of failed-logon evidence |
-| SIEM setup | Installed Splunk on Kali and verified local web access and the Free license |
+| SIEM setup and ingestion | Installed Splunk on Kali, verified the Free license, received Windows Security events through a Universal Forwarder, and searched them with SPL |
 | Technical reporting | Recorded commands, outcomes and limits of the findings |
 
 ## Lessons learned
@@ -204,8 +249,8 @@ The screenshots show the initial sign-in and the license verification after swit
 
 ## Next steps for the lab
 
-- Configure Windows event collection into Splunk and verify that test events are searchable.
-- Use the collected authentication events to investigate failed logons.
+- Investigate the two historical failed-logon events in context and document what additional evidence would be needed before classifying activity.
+- Build and test a basic alert or dashboard from the ingested Windows Security data.
 
 ## References
 
